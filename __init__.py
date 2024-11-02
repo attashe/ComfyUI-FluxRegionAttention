@@ -14,7 +14,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "RegionAttention": "Region Attention",
     "FluxRegionMask": "Region Mask",
     "FluxRegionBBOX": "Region bbox",
-    # "RegionPack": "Region Packing",
     "CLIPDebug": "CLIP debug",
     # "VisualizeBBoxesNode": "Visualize Bounding Boxes",
     # "BBoxToMaskNode": "Bounding Boxes to Mask",
