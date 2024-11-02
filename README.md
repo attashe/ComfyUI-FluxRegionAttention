@@ -23,8 +23,8 @@ Workflows in the metadata
 
 2. Pipeline
 
-![colored wall](comfy_screenshot_4.png)
-![black swan](comfy_screenshot.png)
+![colored wall](./images/comfy_screenshot_4.png)
+![black swan](./images/comfy_screenshot.png)
 
 
 ## Aknowledgements
