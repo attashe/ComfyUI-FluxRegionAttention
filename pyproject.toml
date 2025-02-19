@@ -1,0 +1,14 @@
+[project]
+name = "fluxregionattention"
+description = "Implement Region Attention for Flux model. Add node RegionAttention that takes a regions - mask + condition, mask could be set from comfyui masks or bbox in FluxRegionBBOX node.\nThis code is not optimized and has a memory leak. If you caught a OOM just try run a query againg - works on my RTX3080. For generation it uses a usual prompt that have influence to all picture and a regions that have their own prompts.\nBase prompt good for setup background and style of image. This is train-free technique and results not always stable - sometimes need to try several seeds or change prompt."
+version = "1.0.0"
+license = {file = "LICENSE"}
+
+[project.urls]
+Repository = "https://github.com/attashe/ComfyUI-FluxRegionAttention"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI-FluxRegionAttention"
+Icon = ""
