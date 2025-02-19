@@ -18,7 +18,7 @@ orig_attention = comfy_attention.optimized_attention
 
 
 def xformers_attention(q: Tensor, k: Tensor, v: Tensor, pe: Tensor,
-              attn_mask: Tensor = None, q_scale=None, k_scale=None) -> Tensor:
+              attn_mask: Tensor = None, q_scale=None, k_scale=None, **kwargs) -> Tensor:
     q, k = flux_math.apply_rope(q, k, pe)
 
     # Permute the dimensions for q, k, v
