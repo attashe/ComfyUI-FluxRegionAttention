@@ -1,5 +1,6 @@
+import gc
 import torch
-from xformers.ops import memory_efficient_attention as xattention
+import torch.nn.functional as F
 import numpy as np
 from torch import Tensor
 from comfy.ldm.modules import attention as comfy_attention
@@ -17,22 +18,39 @@ import matplotlib.pyplot as plt
 orig_attention = comfy_attention.optimized_attention
 
 
-def xformers_attention(q: Tensor, k: Tensor, v: Tensor, pe: Tensor,
-              attn_mask: Tensor = None, q_scale=None, k_scale=None, **kwargs) -> Tensor:
-    q, k = flux_math.apply_rope(q, k, pe)
-
-    # Permute the dimensions for q, k, v
-    # From: [B, H, L, D] -> [B, L, H, D]
-    q = rearrange(q, "B H L D -> B L H D")
-    k = rearrange(k, "B H L D -> B L H D")
-    v = rearrange(v, "B H L D -> B L H D")
+def masked_attention(q: Tensor, k: Tensor, v: Tensor, pe: Tensor,
+                    attn_mask: Tensor = None, q_scale=None, k_scale=None, **kwargs) -> Tensor:
+    """
+    Implementation using PyTorch's scaled_dot_product_attention
     
-    x = xattention(q, k, v, attn_bias=attn_mask)
-
-    x = rearrange(x, "B L H D -> B L (H D)")
-
+    Args:
+        q: Query tensor of shape [B, H, L, D]
+        k: Key tensor of shape [B, H, L, D]
+        v: Value tensor of shape [B, H, L, D]
+        pe: Positional encoding tensor
+        attn_mask: Optional attention mask
+        q_scale: Optional query scaling factor
+        k_scale: Optional key scaling factor
+        
+    Returns:
+        Output tensor of shape [B, L, H*D]
+    """
+    # Apply rotary positional encoding
+    q, k = flux_math.apply_rope(q, k, pe)
+    
+    # PyTorch's scaled_dot_product_attention
+    # The scaling is handled internally by the function
+    x = F.scaled_dot_product_attention(
+        q, k, v,
+        attn_mask=attn_mask,
+        dropout_p=0.0,  # Assuming no dropout in the original
+        is_causal=False  # Assuming not causal, adjust if needed
+    )
+    
+    # Reshape back to the expected output format
+    x = rearrange(x, "B H L D -> B L (H D)")
+    
     return x
-
 
 def prepare_attention_mask(lin_masks: List[Image.Image], reg_embeds: List[Tensor], 
                            Nx: int, emb_size: int, emb_len: int,):
@@ -317,12 +335,14 @@ class RegionAttention:
             x = region_attention(q, k, v, heads, skip_reshape=True)
             return x
 
-        override_attention = partial(xformers_attention, attn_mask=attn_mask_arg)
+        override_attention = partial(masked_attention, attn_mask=attn_mask_arg)
         
         flux_math.attention = override_attention
         flux_layers.attention = override_attention
 
         del condition
+        gc.collect()
+        torch.cuda.empty_cache()
         new_condition = [[
             extended_condition,
             {'pooled_output': clip_emb},
